@@ -1,13 +1,9 @@
 # Gestor 2000: Teste Tecnico de Engenharia de Dados
 
-Teste tecnico de 3 partes para candidatos a Engenheiro(a) de Dados Senior. Envolve migracao de dados legados, otimizacao de queries e decisoes arquiteturais em PostgreSQL.
-
-**Score: 10/10** — Pipeline funcional, documentacao completa, decisoes bem fundamentadas.
 
 ## Estrutura do Projeto
 
 ```
-3 Partes (11 horas de trabalho):
 
 1. PIPELINE (40%)          → src/gestor_2000/parte_01/
    └─ Migracao de dados legados com validacao e normalizacao
@@ -219,30 +215,4 @@ Q4: 10ms → 2ms (5x mais rápido)
 3. **Para ver tuning:** Vá para [parte_02/README.md](src/gestor_2000/parte_02/README.md)
 4. **Para arquitetura:** Vá para [parte_03/README.md](src/gestor_2000/parte_03/README.md)
 
-## Pontos Fortes
 
-- ✓ Pipeline idempotente com quarentena auditável
-- ✓ Decisões bem documentadas com trade-offs explicitos
-- ✓ Otimizacoes de query com impacto mensurado
-- ✓ Stack escalável para crescimento acelerado
-- ✓ Código limpo sem vulnerabilidades (SQL injection, etc)
-- ✓ Facilmente testável com pytest
-
-## Próximos Passos (Opcional)
-
-- Implementar testes automatizados com pytest
-- Adicionar monitoramento com pg_stat_statements
-- Configurar CI/CD (GitHub Actions)
-- Containerizar com Docker
-- Implementar table partitioning em eventos
-
-## Contato
-
-**Autor:** Marcelo-Kimura-Data  
-**Email:** marcelo.kimura.data@gmail.com
-
----
-
-**Status:** Projeto completo e pronto para apresentacao  
-**Data:** 2026-07-23  
-**Score:** 10/10
