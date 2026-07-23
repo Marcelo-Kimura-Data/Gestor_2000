@@ -5,15 +5,17 @@ Conecta ao banco e gera DATA_QUALITY.md automaticamente.
 """
 
 import sys
+import json
 from pathlib import Path
 
-# Adicionar src ao path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root / "src"))
+# Adicionar src ao path (projeto_root é a raiz do projeto, 3 níveis acima)
+# __file__ = .../src/gestor_2000/parte_01/calcular_metricas.py
+# .parent.parent.parent = .../src/
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from gestor_2000.database import DatabaseConnection
 from gestor_2000.config import CLIENTES_QUARENTENA, PEDIDOS_QUARENTENA, PAGAMENTOS_QUARENTENA
-import json
 
 def contar_rejeicoes(arquivo_quarentena):
     """Conta registros em arquivo JSONL."""
@@ -29,8 +31,13 @@ def calcular_metricas():
     print("CALCULANDO MÉTRICAS DE QUALIDADE")
     print("="*80)
 
-    db = DatabaseConnection()
-    db.connect()
+    try:
+        db = DatabaseConnection()
+        db.connect()
+    except Exception as e:
+        print(f"\n❌ Erro ao conectar ao banco de dados: {e}")
+        print("Verifique se PostgreSQL está rodando e configurado corretamente.")
+        sys.exit(1)
 
     # ========================================================================
     # 1. CONTAR REGISTROS NO BANCO
@@ -126,31 +133,6 @@ def calcular_metricas():
 
     # Clientes - motivos principais
     print("\n  Clientes rejeitados:")
-    db.cursor.execute("""
-        SELECT motivo, COUNT(*) as count
-        FROM (
-            SELECT json_extract_path_text(to_jsonb(raw::json), 'motivo') as motivo
-            FROM (SELECT line as raw FROM unnest(string_to_array(
-                (SELECT string_agg(line, E'\n') FROM (
-                    SELECT line FROM (
-                        SELECT unnest(string_to_array(
-                            (SELECT string_agg(data, E'\n') FROM (
-                                SELECT regexp_split_to_table(
-                                    pg_read_file('%s'), E'\n'
-                                ) as data
-                            ) x),
-                        E'\n')) as line
-                    ) y
-                ) z
-            ) w), E'\n') as line) lines
-        ) parsed
-        WHERE motivo IS NOT NULL
-        GROUP BY motivo
-        ORDER BY count DESC
-        LIMIT 5
-    """ % str(CLIENTES_QUARENTENA).replace("\\", "\\\\"))
-
-    # Simpler approach: ler arquivo e contar
     motivos_clientes = {}
     if CLIENTES_QUARENTENA.exists():
         with open(CLIENTES_QUARENTENA, 'r', encoding='utf-8') as f:
@@ -159,11 +141,18 @@ def calcular_metricas():
                     record = json.loads(line)
                     motivo = record.get('motivo', 'Desconhecido').split(';')[0].strip()
                     motivos_clientes[motivo] = motivos_clientes.get(motivo, 0) + 1
-                except:
-                    pass
+                except json.JSONDecodeError as e:
+                    print(f"    ⚠️ Erro ao parsear JSON: {e}")
+                except Exception as e:
+                    print(f"    ⚠️ Erro inesperado: {e}")
+    else:
+        print(f"    ⚠️ Arquivo não encontrado: {CLIENTES_QUARENTENA}")
 
-    for motivo, count in sorted(motivos_clientes.items(), key=lambda x: -x[1])[:3]:
-        print(f"    - {motivo}: {count}")
+    if motivos_clientes:
+        for motivo, count in sorted(motivos_clientes.items(), key=lambda x: -x[1])[:3]:
+            print(f"    - {motivo}: {count}")
+    else:
+        print("    (Nenhum registro rejeitado)")
 
     db.disconnect()
 
